@@ -1,3 +1,5 @@
+#include <Servo.h>
+
 /*
 
 valve_control - open and close the electric valve in the boat (Självläns).
@@ -23,29 +25,67 @@ But perhaps it simple enough to just write the code for one motor.
  
 */
 
-#include "motor.h"
+#include <Servo.h>
 
 // Pins for all inputs, keep in mind the PWM defines must be on PWM pins
 // the default pins listed are the ones used on the Redbot (ROB-12097) with
 // the exception of STBY which the Redbot controls with a physical switch
-#define AIN1 2
-#define BIN1 7
+#define AIN1 3
 #define AIN2 4
-#define BIN2 8
 #define PWMA 5
+#define STBY na
+
+#define BIN1 7
+#define BIN2 8
 #define PWMB 6
-#define STBY 9
 
 #define offset 1
 
-Motor motor = Motor(AIN1, AIN2, PWMA, offset, STBY);
+Servo myservo;  // create servo object to control a servo
 
 void setup() {
   // put your setup code here, to run once:
-  
+  // myservo.attach(PWMA);  // attaches the servo on pin 9 to the servo object
+
+  pinMode(AIN1, OUTPUT);
+  pinMode(AIN2, OUTPUT);
+  pinMode(PWMA, OUTPUT);
 }
 
+int pos = 0;    // variable to store the servo position
+
 void loop() {
-  // put your main code here, to run repeatedly:
-  motor.standby();
+  digitalWrite(PWMA, HIGH); // We don't PWM (yet)
+
+  // CW
+  digitalWrite(AIN1, HIGH);
+  digitalWrite(AIN2, LOW);
+  delay(3000);
+
+  // OFF
+  digitalWrite(AIN1, LOW);
+  digitalWrite(AIN2, LOW);
+  delay(3000);
+    
+  // CCW
+  digitalWrite(AIN1, LOW);
+  digitalWrite(AIN2, HIGH);
+  delay(3000);
+
+  // OFF
+  digitalWrite(AIN1, LOW);
+  digitalWrite(AIN2, LOW);
+  delay(3000);
+  
+  /*
+ for (pos = 0; pos <= 180; pos += 1) { // goes from 0 degrees to 180 degrees
+    // in steps of 1 degree
+    myservo.write(pos);              // tell servo to go to position in variable 'pos'
+    delay(15);                       // waits 15ms for the servo to reach the position
+  }
+  for (pos = 180; pos >= 0; pos -= 1) { // goes from 180 degrees to 0 degrees
+    myservo.write(pos);              // tell servo to go to position in variable 'pos'
+    delay(15);                       // waits 15ms for the servo to reach the position
+  } 
+  */
 }
