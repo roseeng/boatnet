@@ -1,3 +1,7 @@
+#PlatformIO artefacts
+.pioenvs
+.piolibdeps
+
 # Prerequisites
 *.d
 
