@@ -3,6 +3,10 @@
 
 #include <Wire.h>
 #include <Adafruit_MotorShield.h>
+#include "LowPower.h"
+
+// This is the Low-Power version, where the open and close buttons 
+// trigger interrupts that will wake up the Uno from hibernation.
 
 // Set LED_BUILTIN if it is not defined by Arduino framework
 // #define LED_BUILTIN 13
@@ -24,8 +28,13 @@ Valve valve = Valve(motor1, PIN_VALVE_SW1, PIN_VALVE_SW2);
 // Define the open-close switches on the dashboard
 // A dpdt switch with spring return makes most sense
 
-#define PIN_DASH_SW1 8
-#define PIN_DASH_SW2 9
+#define PIN_DASH_SW1 2 // The Uno can only have interrupts on pins 2 and 3
+#define PIN_DASH_SW2 3
+
+void wakeUp()
+{
+    // Just a handler for the pin interrupt.
+}
 
 void setup()
 {
@@ -68,44 +77,18 @@ void loop()
     valve.Close();
   }
 
-  delay(500);
-}
+  if (valve.GetState() == MotorState::CLOSED || valve.GetState() == MotorState::OPEN) {
+    // We are in a still state, go to sleep
+    attachInterrupt(digitalPinToInterrupt(PIN_DASH_SW1), wakeUp, LOW);
+    attachInterrupt(digitalPinToInterrupt(PIN_DASH_SW2), wakeUp, LOW);
+    LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF); 
 
-/*
-#define DIR_CLOSE FORWARD
-#define DIR_OPEN BACKWARD
-
-uint8_t direction = DIR_CLOSE;
-
-void loop()
-{
-  if (direction == DIR_CLOSE) {
-    Serial.println("Stänger");
-    motor1->run(DIR_CLOSE);
-  } else if (direction == DIR_OPEN) {
-    Serial.println("Öppnar");
-    motor1->run(DIR_OPEN);
+    // Wake up!
+    detachInterrupt(digitalPinToInterrupt(PIN_DASH_SW1));
+    detachInterrupt(digitalPinToInterrupt(PIN_DASH_SW2));
   } else {
-    Serial.println("Stop");
-    motor1->run(RELEASE);
+    // Unknow state or moving, stay awake
+    delay(500);
   }
-
-  bool sw_open = digitalRead(PIN_VALVE_SW1) == 0;
-  Serial.print(sw_open ? "Switch_Open True  " : "Switch_Open False ");
-
-  bool sw_closed = digitalRead(PIN_VALVE_SW2) == 0;
-  Serial.println(sw_closed ? "Switch_Closed True " : "Switch_Closed False");
-  
-  digitalWrite(LED_BUILTIN, HIGH);
-  delay(400);
-
-//  delay(700);
-
-  if (i % 33 == 0)
-  direction = BACKWARD;
-
-  if (i++ % 8 == 0)
-    direction = RELEASE;
-  //    direction = (direction == FORWARD) ? BACKWARD : FORWARD;
 }
-*/
+
