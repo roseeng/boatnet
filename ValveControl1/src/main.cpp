@@ -3,6 +3,7 @@
 
 #include <Wire.h>
 #include <Adafruit_MotorShield.h>
+#include <LowPower.h>
 
 // Set LED_BUILTIN if it is not defined by Arduino framework
 // #define LED_BUILTIN 13
@@ -23,9 +24,14 @@ Valve valve = Valve(motor1, PIN_VALVE_SW1, PIN_VALVE_SW2);
 
 // Define the open-close switches on the dashboard
 // A dpdt switch with spring return makes most sense
+// For the interrupt version on an Uno, this has to be 2 and 3
+#define PIN_DASH_SW1 2
+#define PIN_DASH_SW2 3
 
-#define PIN_DASH_SW1 8
-#define PIN_DASH_SW2 9
+void wakeUp()
+{
+    // Just a handler for the pin interrupt.
+}
 
 void setup()
 {
@@ -33,7 +39,7 @@ void setup()
   pinMode(LED_BUILTIN, OUTPUT);
 
   Serial.begin(9600);  
-  Serial.println("Valve control V1 - Adafruit Motorshield V2 version");
+  Serial.println("Valve control V1 - Adafruit Motorshield V2 version with interrupts");
 
   pinMode(PIN_VALVE_SW1, INPUT_PULLUP);
   pinMode(PIN_VALVE_SW2, INPUT_PULLUP);
@@ -49,8 +55,6 @@ void setup()
   Serial.print("State: ");
   Serial.println(valve.GetStateStr());
 }
-
-int i = 1;
 
 void loop()
 {
@@ -68,44 +72,14 @@ void loop()
     valve.Close();
   }
 
-  delay(500);
-}
-
-/*
-#define DIR_CLOSE FORWARD
-#define DIR_OPEN BACKWARD
-
-uint8_t direction = DIR_CLOSE;
-
-void loop()
-{
-  if (direction == DIR_CLOSE) {
-    Serial.println("Stänger");
-    motor1->run(DIR_CLOSE);
-  } else if (direction == DIR_OPEN) {
-    Serial.println("Öppnar");
-    motor1->run(DIR_OPEN);
-  } else {
-    Serial.println("Stop");
-    motor1->run(RELEASE);
+  if (valve.GetState() == OPEN || valve.GetState() == CLOSED) {
+    Serial.println("Going to sleep...");
+    attachInterrupt(digitalPinToInterrupt(PIN_DASH_SW1), wakeUp, FALLING);
+    attachInterrupt(digitalPinToInterrupt(PIN_DASH_SW2), wakeUp, FALLING);
+    LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);
+    detachInterrupt(digitalPinToInterrupt(PIN_DASH_SW1));
+    detachInterrupt(digitalPinToInterrupt(PIN_DASH_SW2));
+    Serial.println("Awake again!");
   }
-
-  bool sw_open = digitalRead(PIN_VALVE_SW1) == 0;
-  Serial.print(sw_open ? "Switch_Open True  " : "Switch_Open False ");
-
-  bool sw_closed = digitalRead(PIN_VALVE_SW2) == 0;
-  Serial.println(sw_closed ? "Switch_Closed True " : "Switch_Closed False");
-  
-  digitalWrite(LED_BUILTIN, HIGH);
-  delay(400);
-
-//  delay(700);
-
-  if (i % 33 == 0)
-  direction = BACKWARD;
-
-  if (i++ % 8 == 0)
-    direction = RELEASE;
-  //    direction = (direction == FORWARD) ? BACKWARD : FORWARD;
 }
-*/
+
